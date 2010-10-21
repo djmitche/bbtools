@@ -85,7 +85,7 @@ f1.addStep(SVN(baseURL='http://svn.r.igoro.us/projects/toys/Processor/', default
 #f1.addStep(ShellCommand(command="sleep 15", logEnviron=False))
 #f1.addStep(MasterShellCommand(command="sleep 5"))
 #f1.addStep(Trigger(schedulerNames=['a'], waitForFinish=True))
-f1.addStep(ShellCommand(command="while true; do echo hi; done", description='echoing', descriptionDone='echoed', usePTY=True))
+f1.addStep(ShellCommand(command="cat main.cp", description='catting', descriptionDone='catted', usePTY=True))
 #f1.addStep(FileUpload(slavesrc="main.cp", masterdest="/tmp/main.cp"))
 #f1.addStep(ShellCommand(command="false", flunkOnFailure=True))
 
