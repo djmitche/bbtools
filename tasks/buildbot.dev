@@ -1,0 +1,27 @@
+load_task() {
+    if test -z "${DEV_VIRTUALENV_PACKAGE_CACHE}"; then
+        echo "Be kind to pypi - set up a package cache.  Add"
+        echo "  DEV_VIRTUALENV_PACKAGE_CACHE=.pkg-cache"
+        echo "to your .devrc"
+        exit 1
+    fi
+
+    # load buildbot
+    load git git://github.com/buildbot/buildbot.git
+
+    # set it up in a virtualenv
+    load virtualenv sandbox
+    load pip install --editable=master
+    load pip install --editable=slave
+
+    # add some testing/development utilities
+    load pip install mock
+    load pip install pyflakes
+    load pip install pep8
+    load pip install pylint
+    load pip install coverage
+}
+
+# point to the master configuration, for 'dev master'; you can
+# override this in a particular task ('dev task edit')
+MASTER_CONFIG="$DEV_PROJECT_DIR/dev/base_cfg.py"

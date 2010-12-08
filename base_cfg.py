@@ -1,6 +1,8 @@
 # -*- python -*-
 # ex: set syntax=python:
 
+import os
+
 # This is a sample buildmaster config file. It must be installed as
 # 'master.cfg' in your buildmaster's base directory (although the filename
 # can be changed with the --basedir option to 'mktap buildbot master').
@@ -37,13 +39,14 @@ c['slavePortnum'] = 9989
 # put here: there are several in buildbot/changes/*.py to choose from.
 
 from buildbot.changes.svnpoller import SVNPoller, split_file_branches
+from buildbot.changes.gitpoller import GitPoller
 from buildbot.changes.pb import PBChangeSource
-c['changeHorizon'] = 2
+
+c['changeHorizon'] = None
 c['change_source'] = [
-        SVNPoller(svnurl='http://svn.r.igoro.us/projects/toys/Processor/',
-                                pollinterval=120, # two minutes
-                                split_file=split_file_branches),
-        PBChangeSource(),
+  #SVNPoller(svnurl='http://svn.r.igoro.us/projects/toys/Processor/', pollinterval=120, split_file=split_file_branches),
+  PBChangeSource(),
+  GitPoller('/home/dustin/code/buildbot/t/testrepo/', branch='master', pollinterval=3, project='foo'),
 ]
 
 ####### SCHEDULERS
@@ -53,9 +56,10 @@ c['change_source'] = [
 from buildbot.schedulers import basic, filter, triggerable, timed, trysched
 c['schedulers'] = []
 c['schedulers'].append(basic.AnyBranchScheduler(name="all",
-    branches=['foo', 'bar'],
-                                 treeStableTimer=1200,
-                                 builderNames=["builder"]))
+                                #branches=['foo', 'bar'],
+                                treeStableTimer=None,
+                                #fileIsImportant = lambda c : 'test.cpp' not in c.files,
+                                builderNames=["builder"]))
 c['schedulers'].append(triggerable.Triggerable(name="a",
                                  builderNames=["builder"]))
 if 0:
@@ -64,13 +68,13 @@ if 0:
 c['schedulers'].append(trysched.Try_Userpass(name="goaheadtryme",
                                 builderNames=[ 'builder', ],
                                 port=9999,
-                                userpass=[('testy', 'test')]))
+                                userpass=[('bbot', 'dev!')]))
 
 
 ####### BUILDERS
 
 from buildbot.process import factory
-from buildbot.steps.source import SVN, P4, Mercurial
+from buildbot.steps.source import SVN, P4, Mercurial, Git
 from buildbot.steps.shell import ShellCommand, PerlModuleTest
 from buildbot.steps.master import MasterShellCommand
 from buildbot.steps.transfer import FileDownload, DirectoryUpload, FileUpload
@@ -79,15 +83,25 @@ from buildbot.steps.python_twisted import Trial
 from buildbot.process.properties import WithProperties
 f1 = factory.BuildFactory()
 #f1.addStep(P4(p4base="//depot/proj"))
-f1.addStep(SVN(baseURL='http://svn.r.igoro.us/projects/toys/Processor/', defaultBranch='trunk'))
+#f1.addStep(SVN(baseURL='http://svn.r.igoro.us/projects/toys/Processor/', defaultBranch='trunk'))
+f1.addStep(Git(repourl='/home/dustin/code/buildbot/t/testrepo/', mode='copy'))
 #f1.addStep(Mercurial(baseURL='http://bitbucket.org/nicolas17/pyboinc', mode='copy'))
 #f1.addStep(ShellCommand(command=WithProperties("echo %(scheduler)s"), logEnviron=False))
 #f1.addStep(ShellCommand(command="sleep 15", logEnviron=False))
-#f1.addStep(MasterShellCommand(command="sleep 5"))
 #f1.addStep(Trigger(schedulerNames=['a'], waitForFinish=True))
-f1.addStep(ShellCommand(command="cat main.cp", description='catting', descriptionDone='catted', usePTY=True))
-#f1.addStep(FileUpload(slavesrc="main.cp", masterdest="/tmp/main.cp"))
+#f1.addStep(ShellCommand(command="sleep 5", doStepIf=lambda *args : False))
+f1.addStep(ShellCommand(command="echo hi", description='echoing', descriptionDone='echoed', usePTY=True))
+#f1.addStep(ShellCommand(command="while true; do cat main.cp; done; echo hi"))
+f1.addStep(FileUpload(slavesrc="README.txt", masterdest="/tmp/main.cp"))
 #f1.addStep(ShellCommand(command="false", flunkOnFailure=True))
+
+class InstallBuildFromArchivePath(ShellCommand):
+    def finished(self, result):
+        ret = ShellCommand.finished(self, result)
+        print "finished"
+        self.addURL("download", "URL")
+        return ret
+f1.addStep(InstallBuildFromArchivePath(command=['echo hi']))
 
 from buildbot.config import BuilderConfig
 c['builders'] = [
@@ -95,6 +109,7 @@ c['builders'] = [
             name = "builder",
             slavenames = "bot",
             factory = f1,
+            category = 'x7',
           ) ]
 
 
@@ -107,7 +122,8 @@ c['builders'] = [
 c['status'] = []
 
 from buildbot.status import html
-c['status'].append(html.WebStatus(http_port=8010, allowForce=True))
+c['status'].append(html.WebStatus(http_port=8010, allowForce=True,
+    revlink = lambda rev,repo: '%s:%s' % (rev,repo)))
 
 # from buildbot.status import mail
 # c['status'].append(mail.MailNotifier(fromaddr="buildbot@localhost",
@@ -153,7 +169,7 @@ c['status'].append(html.WebStatus(http_port=8010, allowForce=True))
 #c['buildHorizon'] = 88888
 
 c['projectName'] = "Buildbot"
-c['projectURL'] = "http://svn.r.igoro.us/"
+c['projectURL'] = "http://buildbot.sourceforge.net/"
 
 # the 'buildbotURL' string should point to the location where the buildbot's
 # internal web server (usually the html.Waterfall page) is visible. This

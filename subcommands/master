@@ -1,0 +1,37 @@
+#! /bin/bash
+
+require base
+have_task || die "No task loaded"
+
+reset_basedir=true
+test "$1" = "-k" && reset_basedir=false # k is for "keep"
+
+if test -n "$1"; then
+    MASTER_CONFIG="$PWD/$1"
+fi
+
+test -z "$MASTER_CONFIG" && die "Add MASTER_CONFIG to the task configuration or on the command line"
+
+find "$DEV_TASK_DIR"/{master,slave} -name '*.pyc' -exec rm \{} \;
+if test -z "$VIRTUAL_ENV"; then
+    echo "Activating sandbox"
+    source "$DEV_TASK_DIR/sandbox/bin/activate"
+fi
+
+PIDFILE="$VIRTUAL_ENV/master.pid"
+BASEDIR="$VIRTUAL_ENV/master"
+
+if [ -f "$PIDFILE" ]; then
+    buildbot stop "$BASEDIR" || exit 1
+fi
+
+if $reset_basedir; then
+    (cd "$DEV_TASK_DIR/master"; python setup.py develop) || exit 1
+    rm -rf "$BASEDIR"
+    buildbot create-master -c "$MASTER_CONFIG" "$BASEDIR" || exit 1
+    # hack out the logfile rotation stuff
+    sed -i -e 's/application.setComponent/#application.setComponent/' "$BASEDIR/buildbot.tac"
+fi
+
+cd "$BASEDIR"
+twistd --nodaemon --pidfile="$PIDFILE" --no_save -y "$BASEDIR/buildbot.tac" || exit 1

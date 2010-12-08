@@ -1,0 +1,30 @@
+#! /bin/bash
+
+require base
+have_task || die "No task loaded"
+
+# pass in an identifier to separate out two slaves
+IDENTIFIER="$1"
+
+if test -z "$VIRTUAL_ENV"; then
+    echo "Activating sandbox"
+    source "$DEV_TASK_DIR/sandbox/bin/activate"
+fi
+
+find "$DEV_TASK_DIR/buildbot" -name '*.pyc' -exec rm \{} \;
+
+PIDFILE="$VIRTUAL_ENV/slave.pid"
+BASEDIR="$VIRTUAL_ENV/slave$IDENTIFIER"
+
+if [ -f "$PIDFILE" ]; then
+    buildslave stop "$BASEDIR" || exit 1
+fi
+
+(cd "$DEV_TASK_DIR/slave"; python setup.py develop) || exit 1
+rm -rf "$BASEDIR"
+buildslave create-slave --maxdelay=1 "$BASEDIR" localhost:9989 ${SLAVE_NAME:-bot} ${SLAVE_PASS:-pass}
+# hack out the logfile rotation
+sed -i -e 's/application.setComponent/#application.setComponent/' "$BASEDIR/buildbot.tac"
+
+cd "$BASEDIR"
+twistd --nodaemon --logfile=- --pidfile="$PDIFILE"  --no_save -y "$BASEDIR/buildbot.tac"

@@ -1,0 +1,29 @@
+#! /bin/bash
+
+require base
+have_task || die "No task loaded"
+
+find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
+
+if test -z "$1"; then
+    TEST='buildbot.test buildslave.test'
+else
+    TEST="${@}"
+fi
+
+if test -z "$VIRTUAL_ENV"; then
+    echo "Activating sandbox"
+    source "$DEV_TASK_DIR/sandbox/bin/activate"
+fi
+
+# actually do the coverage stuff
+coverage erase || exit 1
+rm -rf ~/public_html/covhtml || exit 1
+
+coverage run --rcfile=.coveragerc \
+    sandbox/bin/trial $debug --temp-directory /tmp/trialtemp ${TEST} || exit 1
+
+coverage report --rcfile=.coveragerc || exit 1
+echo -n "generating html.. "
+coverage html -i --rcfile=.coveragerc -d ~/public_html/covhtml || exit 1
+echo "http://knuth.r.igoro.us/~dustin/covhtml"
