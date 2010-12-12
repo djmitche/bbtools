@@ -1,0 +1,8 @@
+load_task() {
+    # load buildbot
+    load git git://github.com/buildbot/pyflakes.git
+
+    # set it up in a virtualenv
+    load virtualenv sandbox
+    load pip install --editable=.
+}
