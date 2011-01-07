@@ -21,9 +21,8 @@ coverage erase || exit 1
 rm -rf ~/public_html/covhtml || exit 1
 
 coverage run --rcfile=.coveragerc \
-    sandbox/bin/trial $debug --temp-directory /tmp/trialtemp ${TEST} || exit 1
+    sandbox/bin/trial --reporter summary $debug --temp-directory /tmp/trialtemp ${TEST} || exit 1
 
-coverage report --rcfile=.coveragerc || exit 1
 echo -n "generating html.. "
 coverage html -i --rcfile=.coveragerc -d ~/public_html/covhtml || exit 1
 echo "http://knuth.r.igoro.us/~dustin/covhtml"
