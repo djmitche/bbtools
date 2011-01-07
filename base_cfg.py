@@ -45,8 +45,8 @@ from buildbot.changes.pb import PBChangeSource
 c['changeHorizon'] = None
 c['change_source'] = [
   #SVNPoller(svnurl='http://svn.r.igoro.us/projects/toys/Processor/', pollinterval=120, split_file=split_file_branches),
-  PBChangeSource(),
-  GitPoller('/home/dustin/code/buildbot/t/testrepo/', branch='master', pollinterval=3, project='foo'),
+  PBChangeSource(port=9989),
+  GitPoller('/home/dustin/code/buildbot/t/testrepo/', branch='master', pollinterval=3, project='foo', workdir=os.path.abspath('gitpoller-work')),
 ]
 
 ####### SCHEDULERS
@@ -67,7 +67,7 @@ if 0:
                                      builderNames=["builder"]))
 c['schedulers'].append(trysched.Try_Userpass(name="goaheadtryme",
                                 builderNames=[ 'builder', ],
-                                port=9999,
+                                port=8888,
                                 userpass=[('bbot', 'dev!')]))
 
 
