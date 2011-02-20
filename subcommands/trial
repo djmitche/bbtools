@@ -21,5 +21,8 @@ if test -z "$VIRTUAL_ENV"; then
     echo "Activating sandbox"
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
+
+rm -rf /tmp/trialtemp
+
 echo "starting.."
 trial $debug --reporter bwverbose --temp-directory /tmp/trialtemp ${TEST}
