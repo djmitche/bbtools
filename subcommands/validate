@@ -1,22 +1,84 @@
 #! /bin/bash
 
-require base
+require base color
 have_task || die "No task loaded"
 
 TEST='buildbot.test buildslave.test'
+REVRANGE="github/master..master"
+
+status() {
+    echo ""
+    echo "${YELLOW}-- ${*} --${NORM}"
+}
 
 if test -z "$VIRTUAL_ENV"; then
-    echo "Activating sandbox"
+    status "activating sandbox"
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
 
+ok=true
+not_ok() {
+    ok=false
+    echo "${RED}** ${*} **${NORM}"
+}
+
+check_long_lines() {
+    # only check python files
+    local long_lines=false
+    for f in $(git diff --name-only --stat "$REVRANGE" | grep '.py$'); do
+        # don't try to check removed files
+        [ ! -f "$f" ] && continue
+        if [ $(git diff "$REVRANGE" $f | grep -c '+.{80}') != 0 ]; then
+            echo " $f"
+            long_lines=true
+        fi
+    done
+    $long_lines
+}
+
+if ! git diff --no-ext-diff --quiet --exit-code; then
+    not_ok "changed files in working copy"
+    exit 1
+fi
+
+status "removing .pyc files"
+find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
+
+status "checking commits"
+git log "$REVRANGE" --pretty=oneline
+
+status "checking formatting"
+git diff "$REVRANGE" | grep -q $'+.*\t' && not_ok "org/master..master adds tabs"
+check_long_lines && not_ok "org/master..master adds long lines"
+
+status "running tests"
 cd $DEV_TASK_DIR || exit 1
-trial $debug --reporter summary --temp-directory /tmp/trialtemp ${TEST} || exit 1
-make pyflakes || exit 1
+coverage erase || exit 1
+coverage run --rcfile=.coveragerc \
+    sandbox/bin/trial --reporter summary --temp-directory /tmp/trialtemp ${TEST} \
+    || not_ok "tests failed"
 
-make VERSION=latest docs || exit 1
+status "running pyflakes"
+make pyflakes || not_ok "failed pyflakes"
 
-echo "Looks good.  Push to github? [enter or ^C]"
+status "coverage report"
+coverage report > covreport || exit 1
+head -n2 covreport || exit 1
+tail -n1 covreport || exit 1
+rm covreport || exit 1
+
+status "building docs"
+make VERSION=latest docs || not_ok "docs failed"
+
+
+echo ""
+if $ok; then
+    echo "${GREEN}GOOD!${NORM}"
+else
+    echo "${RED}NO GOOD!${NORM}"
+    exit
+fi
+echo "Push to github? [ENTER or ^C]"
 read YN
 
 git push org || exit 1
