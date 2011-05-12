@@ -23,6 +23,11 @@ rm -rf ~/public_html/covhtml || exit 1
 coverage run --rcfile=.coveragerc \
     sandbox/bin/trial --reporter summary $debug --temp-directory /tmp/trialtemp ${TEST} || exit 1
 
+coverage report > covreport || exit 1
+head -n2 covreport || exit 1
+tail -n1 covreport || exit 1
+rm covreport || exit 1
+
 echo -n "generating html.. "
 coverage html -i --rcfile=.coveragerc -d ~/public_html/covhtml || exit 1
 echo "http://knuth.r.igoro.us/~dustin/covhtml"

@@ -1,10 +1,7 @@
 # -*- python -*-
 # ex: set syntax=python:
 
-print __file__
-
 import os
-import textwrap
 
 # This is a sample buildmaster config file. It must be installed as
 # 'master.cfg' in your buildmaster's base directory (although the filename
@@ -44,47 +41,30 @@ c['slavePortnum'] = 9989
 # put here: there are several in buildbot/changes/*.py to choose from.
 
 from buildbot.changes.svnpoller import SVNPoller, split_file_branches
-from buildbot.changes.gitpoller import GitPoller
 from buildbot.changes.pb import PBChangeSource
 
 c['changeHorizon'] = None
 c['change_source'] = [
-  #SVNPoller(svnurl='http://svn.r.igoro.us/projects/toys/Processor/', pollinterval=120, split_file=split_file_branches),
-  PBChangeSource(port=9989),
-  GitPoller('/home/dustin/code/buildbot/t/testrepo/', branch='master', pollinterval=3, project='foo', workdir=os.path.abspath('gitpoller-work')),
+  PBChangeSource(),
 ]
 
 ####### SCHEDULERS
 
 ## configure the Schedulers
 
-from buildbot.schedulers import basic, filter, triggerable, timed, trysched
+from buildbot.scheduler import AnyBranchScheduler
 c['schedulers'] = []
-c['schedulers'].append(basic.AnyBranchScheduler(name="all",
+c['schedulers'].append(AnyBranchScheduler(name="all",
+                                branches=None,
                                 treeStableTimer=None,
                                 #fileIsImportant = lambda c : 'test.cpp' not in c.files,
                                 builderNames=["builder"]))
-c['schedulers'].append(triggerable.Triggerable(name="a",
-                                 builderNames=["builder"]))
-if 0:
-    c['schedulers'].append(timed.Periodic(name="n", periodicBuildTimer=1,
-                                     builderNames=["builder"]))
-c['schedulers'].append(trysched.Try_Userpass(name="goaheadtryme",
-                                builderNames=[ 'builder', ],
-                                port=8888,
-                                userpass=[('bbot', 'dev!')]))
 
 ####### BUILDERS
 
 from buildbot.process import factory
-from buildbot.steps.source import SVN, P4, Mercurial, Git
-from buildbot.steps.shell import ShellCommand, PerlModuleTest
-from buildbot.steps.slave import SetPropertiesFromEnv
-from buildbot.steps.master import MasterShellCommand
-from buildbot.steps.transfer import FileDownload, DirectoryUpload, FileUpload
-from buildbot.steps.trigger import Trigger
-from buildbot.steps.python_twisted import Trial
-from buildbot.process.properties import WithProperties
+from buildbot.steps.source import Git
+from buildbot.steps.shell import ShellCommand
 
 f1 = factory.BuildFactory()
 #f1.addStep(P4(p4base="//depot/proj"))
@@ -121,8 +101,7 @@ c['builders'] = [
 c['status'] = []
 
 from buildbot.status import html
-c['status'].append(html.WebStatus(http_port=8010, allowForce=True,
-    revlink = lambda rev,repo: '%s:%s' % (rev,repo)))
+c['status'].append(html.WebStatus(http_port=8010, allowForce=True))
 
 # from buildbot.status import mail
 # c['status'].append(mail.MailNotifier(fromaddr="buildbot@localhost",

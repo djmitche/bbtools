@@ -12,13 +12,11 @@ fi
 
 test -z "$MASTER_CONFIG" && die "Add MASTER_CONFIG to the task configuration or on the command line"
 
-find "$DEV_TASK_DIR"/{master,slave} -name '*.pyc' -exec rm \{} \;
-if test -z "$VIRTUAL_ENV"; then
-    echo "Activating sandbox"
-    source "$DEV_TASK_DIR/sandbox/bin/activate"
-fi
+find "$DEV_TASK_DIR"/{buildbot,master,slave} -name '*.pyc' -exec rm \{} \;
+echo "Activating sandbox"
+source "$DEV_TASK_DIR/sandbox/bin/activate"
 
-PIDFILE="$VIRTUAL_ENV/master.pid"
+PIDFILE="$VIRTUAL_ENV/master/twistd.pid"
 BASEDIR="$VIRTUAL_ENV/master"
 
 if [ -f "$PIDFILE" ]; then
@@ -26,12 +24,13 @@ if [ -f "$PIDFILE" ]; then
 fi
 
 if $reset_basedir; then
-    (cd "$DEV_TASK_DIR/master"; python setup.py develop) || exit 1
+    #(cd "$DEV_TASK_DIR/master"; python setup.py develop) || exit 1
     rm -rf "$BASEDIR"
-    buildbot create-master -c "$MASTER_CONFIG" "$BASEDIR" || exit 1
+    buildbot create-master "$BASEDIR" || exit 1
     # hack out the logfile rotation stuff
     sed -i -e 's/application.setComponent/#application.setComponent/' "$BASEDIR/buildbot.tac"
 fi
+cp "$MASTER_CONFIG" "$BASEDIR/master.cfg"
 
 cd "$BASEDIR"
 twistd --nodaemon --pidfile="$PIDFILE" --no_save -y "$BASEDIR/buildbot.tac" || exit 1

@@ -48,11 +48,12 @@ status "checking commits"
 git log "$REVRANGE" --pretty=oneline
 
 status "checking formatting"
-git diff "$REVRANGE" | grep -q $'+.*\t' && not_ok "org/master..master adds tabs"
+git diff "$REVRANGE" | grep -q $'+.*\t' && not_ok "$REVRANGE adds tabs"
 check_long_lines && not_ok "org/master..master adds long lines"
 
 status "running tests"
 cd $DEV_TASK_DIR || exit 1
+rm -rf /tmp/trialtemp
 coverage erase || exit 1
 coverage run --rcfile=.coveragerc \
     sandbox/bin/trial --reporter summary --temp-directory /tmp/trialtemp ${TEST} \
