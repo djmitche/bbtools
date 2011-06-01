@@ -1,0 +1,35 @@
+" ---- tabbing between related files
+
+" TODO: make this take a list of transform functions and use
+" the first matching function it finds; then Amanda can add
+" .swg -> .pod and installcheck/F_O_O -> perl/F/O/O.pm
+function! GetAlternateFile()
+  if (expand ("%:t") == expand ("%:t:r") . ".c")
+    return "%:t:r.h"
+  else
+    if (expand ("%:t") == expand ("%:t:r") . ".h")
+      return "%:t:r.c"
+    endif
+  endif
+endfunction
+
+function! SwitchSourceHeader()
+    let l:altfile = GetAlternateFile()
+    if l:altfile != ''
+        exec "find " . l:altfile
+    else
+        echo "no alternate"
+    endif
+endfunction
+
+function! SplitSourceHeader()
+    let l:altfile = GetAlternateFile()
+    if l:altfile != ''
+        exec "vert sfind " . l:altfile
+    else
+        echo "no alternate"
+    endif
+endfunction
+
+nmap <tab> :call SwitchSourceHeader()<CR>
+nmap <esc><tab> :call SplitSourceHeader()<CR>

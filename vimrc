@@ -1,3 +1,7 @@
+" stupid typos
+ab buidlbot buildbot
+ab Buidlbot Buildbot
+
 " rgrep on 'K'
 set keywordprg=git\ grep
 
@@ -64,6 +68,7 @@ autocmd BufWinEnter *.py hi def link TooLong SpellBad
 autocmd BufWinEnter *.py match TooLong /\%>80v/
 
 " alternate between files and their tests
+" (see home-vimrc for how this is invoked)
 function! GetAlternateFile()
     let l:fullpath = expand("%:p")
     let l:base_re = ".*\\(master\\/buildbot\\|slave\\/buildslave\\)"
