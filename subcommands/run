@@ -1,0 +1,84 @@
+#! /bin/bash
+
+require base
+have_task || die "No task loaded"
+
+reset_basedir=true
+if test "$1" = "-k"; then
+    reset_basedir=false # k is for "keep"
+    shift
+fi
+
+if test -n "$1"; then
+    MASTER_CONFIG="$PWD/$1"
+fi
+
+test -z "$MASTER_CONFIG" && die "Add MASTER_CONFIG to the task configuration or on the command line"
+
+find "$DEV_TASK_DIR"/{master,slave} -name '*.pyc' -exec rm \{} \;
+echo "Activating sandbox"
+source "$DEV_TASK_DIR/sandbox/bin/activate"
+
+BASEDIR="/A/bbrun"
+PIDFILE="$BASEDIR/twistd.pid"
+
+if [ -f "$PIDFILE" ]; then
+    kill -9 `cat $PIDFILE`
+fi
+
+if $reset_basedir; then
+    rm -rf "$BASEDIR"
+    mkdir -p $BASEDIR/public_html $BASEDIR/info || exit 1
+    echo 'Test <foo>' > $BASEDIR/info/admin
+    echo 'same process as master' > $BASEDIR/info/host
+    cat >$BASEDIR/buildbot.tac <<EOF
+import os
+
+from twisted.application import service
+from buildslave.bot import BuildSlave
+from buildbot.master import BuildMaster
+
+basedir = r'$BASEDIR'
+rotateLength = 10000000
+maxRotatedFiles = 1
+
+# if this is a relocatable tac file, get the directory containing the TAC
+if basedir == '.':
+    import os.path
+    basedir = os.path.abspath(os.path.dirname(__file__))
+
+# note: this line is matched against to check that this is a buildslave
+# directory; do not edit it.
+application = service.Application('buildmaster')
+
+configfile = r'master.cfg'
+
+m = BuildMaster(basedir, configfile)
+m.setServiceParent(application)
+m.log_rotation.rotateLength = rotateLength
+m.log_rotation.maxRotatedFiles = maxRotatedFiles
+
+# ---
+
+buildmaster_host = '127.0.0.1'
+port = 9989
+slavename = 'example-slave'
+passwd = 'pass'
+keepalive = 600
+usepty = 0
+umask = None
+maxdelay = 300
+
+s = BuildSlave(buildmaster_host, port, slavename, passwd, basedir,
+               keepalive, usepty, umask=umask, maxdelay=maxdelay)
+s.setServiceParent(application)
+EOF
+    cp "$MASTER_CONFIG" "$BASEDIR/master.cfg" || exit 1
+    buildbot upgrade-master "$BASEDIR" || exit 1
+fi
+
+# copy in the config whether we're resetting or not
+cp "$MASTER_CONFIG" "$BASEDIR/master.cfg" || exit 1
+
+cd "$BASEDIR"
+twistd --nodaemon --pidfile="$PIDFILE" --no_save -y "$BASEDIR/buildbot.tac" || exit 1

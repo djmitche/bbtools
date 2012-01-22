@@ -8,4 +8,4 @@ if test -z "$VIRTUAL_ENV"; then
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
 
-buildbot sendchange -b master -u change -m localhost:9989 --revision=1332 $* test.cpp
+buildbot sendchange -b master --who change -m localhost:9989 --revision=1332 $* test.cpp

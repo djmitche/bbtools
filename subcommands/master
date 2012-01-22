@@ -12,7 +12,7 @@ fi
 
 test -z "$MASTER_CONFIG" && die "Add MASTER_CONFIG to the task configuration or on the command line"
 
-find "$DEV_TASK_DIR"/{buildbot,master,slave} -name '*.pyc' -exec rm \{} \;
+find "$DEV_TASK_DIR"/{master,slave} -name '*.pyc' -exec rm \{} \;
 echo "Activating sandbox"
 source "$DEV_TASK_DIR/sandbox/bin/activate"
 

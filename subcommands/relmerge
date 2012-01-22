@@ -1,0 +1,19 @@
+#! /bin/bash
+
+branch='buildbot-0.8.5'
+revs=
+for ref in "${@}"; do
+    rev=`git rev-parse ${ref}`
+    [ -n "$rev" ] || exit 1
+    revs="$revs $rev"
+done
+
+[ -n "$revs" ] || exit 1
+git checkout $branch -- || exit 1
+
+for rev in $revs; do
+    echo "==== $rev"
+    git cherry-pick $rev || exit 1
+done
+
+git checkout master --

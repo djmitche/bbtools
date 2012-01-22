@@ -8,4 +8,4 @@ if test -z "$VIRTUAL_ENV"; then
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
 
-make VERSION=latest docs
+make -C master/docs VERSION=latest clean html

@@ -3,11 +3,23 @@
 require base
 have_task || die "No task loaded"
 
-# pass the -b (debug) flag along
-if [ "$1" = "-b" ]; then
-    debug=-b
-    shift
-fi
+while true; do
+    # pass the -b (debug) flag along
+    if [ "$1" = "-b" ]; then
+        debug=-b
+        shift
+        continue
+    elif [ "$1" = "-m" ]; then
+        export BUILDBOT_TEST_DB_URL=mysql+mysqldb://metabuildslave@knuth/metabuildslave
+        shift
+        continue
+    elif [ "$1" = "-p" ]; then
+        export BUILDBOT_TEST_DB_URL=postgresql+pg8000://metabuildslave@knuth/metabuildslave
+        shift
+        continue
+    fi
+    break
+done
 
 find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
 
@@ -22,7 +34,10 @@ if test -z "$VIRTUAL_ENV"; then
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
 
-rm -rf /tmp/trialtemp
+TMPDIR=/tmp/trialtemp
+[ -d /A ] && TMPDIR=/A/trialtemp
+
+rm -rf "${TMPDIR}"
 
 echo "starting.."
-trial $debug --reporter bwverbose --temp-directory /tmp/trialtemp ${TEST}
+trial $debug --reporter bwverbose --temp-directory "${TMPDIR}" ${TEST}

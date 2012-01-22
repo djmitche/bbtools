@@ -1,0 +1,10 @@
+#! /bin/bash
+
+TEST='buildbot.test buildslave.test'
+
+rm -rf /tmp/trialtemp
+coverage erase || exit 1
+coverage run --rcfile=.coveragerc \
+    sandbox/bin/trial --reporter verbose --temp-directory /tmp/trialtemp ${TEST} \
+    || echo "NO"
+

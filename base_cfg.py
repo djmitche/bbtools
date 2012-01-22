@@ -1,8 +1,6 @@
 # -*- python -*-
 # ex: set syntax=python:
 
-print __file__
-
 import os
 import textwrap
 
@@ -26,7 +24,7 @@ c = BuildmasterConfig = {}
 # a tuple of bot-name and bot-password. These correspond to values given to
 # the buildslave's mktap invocation.
 from buildbot.buildslave import BuildSlave
-c['slaves'] = [ BuildSlave("bot", "pass", properties = { 'slprop' : 'val'})]
+c['slaves'] = [ BuildSlave("example-slave", "pass", properties = { 'slprop' : 'val'})]
 
 # to limit to two concurrent builds on a slave, use
 #  c['slaves'] = [BuildSlave("bot1name", "bot1passwd", max_builds=2)]
@@ -36,6 +34,8 @@ c['slaves'] = [ BuildSlave("bot", "pass", properties = { 'slprop' : 'val'})]
 # configured into the buildslaves (with their --master option)
 
 c['slavePortnum'] = 9989
+
+c['changeHorizon'] = 10
 
 ####### CHANGESOURCES
 
@@ -73,6 +73,14 @@ c['schedulers'].append(trysched.Try_Userpass(name="goaheadtryme",
                                 builderNames=[ 'builder', ],
                                 port=8888,
                                 userpass=[('bbot', 'dev!')]))
+try:
+    from buildbot.schedulers.forcesched import ForceScheduler
+except ImportError:
+    ForceScheduler = None
+if ForceScheduler:
+    c['schedulers'].append(ForceScheduler(
+                            name="force",
+                            builderNames=["builder"]))
 
 ####### BUILDERS
 
@@ -94,7 +102,7 @@ f1.addStep(Git(repourl='/home/dustin/code/buildbot/t/testrepo/', mode='update', 
 #f1.addStep(ShellCommand(command=WithProperties("echo %(scheduler)s"), logEnviron=False))
 #f1.addStep(ShellCommand(command="sleep 15", logEnviron=False))
 #f1.addStep(Trigger(schedulerNames=['a'], waitForFinish=True))
-f1.addStep(ShellCommand(command="sleep 5", doStepIf=lambda *args : True))
+f1.addStep(ShellCommand(command="sleep 10", doStepIf=lambda *args : True))
 f1.addStep(ShellCommand(command="echo hi", description='echoing', descriptionDone='echoed', usePTY=True))
 #f1.addStep(ShellCommand(command="while true; do cat main.cp; done; echo hi"))
 #f1.addStep(FileUpload(slavesrc="README.txt", masterdest="test-test"))
@@ -106,9 +114,10 @@ from buildbot.config import BuilderConfig
 c['builders'] = [
           BuilderConfig(
             name = "builder",
-            slavenames = "bot",
+            slavenames = "example-slave",
             factory = f1,
             category = 'x7',
+            mergeRequests = False
           ) ]
 
 
@@ -121,6 +130,13 @@ c['builders'] = [
 c['status'] = []
 
 from buildbot.status import html
+from buildbot.status.web.auth import BasicAuth
+from buildbot.status.web.authz import Authz
+users = [('bob', 'secret-pass'), ('jill', 'super-pass')]
+authz = Authz(auth=BasicAuth(users),
+    forceBuild='auth', # only authenticated users
+    pingBuilder=True, # but anyone can do this
+)
 c['status'].append(html.WebStatus(http_port=8010, allowForce=True,
     revlink = lambda rev,repo: '%s:%s' % (rev,repo)))
 

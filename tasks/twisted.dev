@@ -1,0 +1,4 @@
+# Define your task here
+load_task() {
+    :
+}

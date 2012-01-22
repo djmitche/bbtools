@@ -69,8 +69,7 @@ tail -n1 covreport || exit 1
 rm covreport || exit 1
 
 status "building docs"
-make VERSION=latest docs || not_ok "docs failed"
-
+make -C master/docs html || not_ok "docs failed"
 
 echo ""
 if $ok; then
@@ -79,8 +78,6 @@ else
     echo "${RED}NO GOOD!${NORM}"
     exit
 fi
-echo "Push to github? [ENTER or ^C]"
-read YN
 
 git push org || exit 1
 git push || exit 1
