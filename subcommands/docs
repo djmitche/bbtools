@@ -3,6 +3,8 @@
 require base
 have_task || die "No task loaded"
 
+cd "$DEV_TASK_DIR"
+
 if test -z "$VIRTUAL_ENV"; then
     echo "Activating sandbox"
     source "$DEV_TASK_DIR/sandbox/bin/activate"
