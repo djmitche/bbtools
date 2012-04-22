@@ -7,6 +7,11 @@ OLDREV="github/master"
 
 find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
 
+if test -z "$VIRTUAL_ENV"; then
+    echo "Activating sandbox"
+    source "$DEV_TASK_DIR/sandbox/bin/activate"
+fi
+
 cd "${DEV_TASK_DIR}" || exit 1
 if ./common/validate.sh $OLDREV; then
     git push org || exit 1

@@ -1,0 +1,14 @@
+load_task() {
+    if test -z "${DEV_VIRTUALENV_PACKAGE_CACHE}"; then
+        echo "Be kind to pypi - set up a package cache.  Add"
+        echo "  DEV_VIRTUALENV_PACKAGE_CACHE=.pkg-cache"
+        echo "to your .devrc"
+        exit 1
+    fi
+
+    load git git://github.com/buildbot/highscore.git
+
+    # set it up in a virtualenv
+    load virtualenv sandbox
+    load pip install --editable=.
+}

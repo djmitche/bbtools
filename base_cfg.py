@@ -135,6 +135,7 @@ from buildbot.status.web.authz import Authz
 users = [('bob', 'secret-pass'), ('jill', 'super-pass')]
 authz = Authz(auth=BasicAuth(users),
     forceBuild='auth', # only authenticated users
+    cancelPendingBuild=True,
     pingBuilder=True, # but anyone can do this
 )
 c['status'].append(html.WebStatus(http_port=8010, allowForce=True,
