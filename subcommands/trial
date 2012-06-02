@@ -24,8 +24,12 @@ done
 find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
 
 if test -z "$1"; then
+    # use the text reporter for the whole suite (that much console scrolling is slow on laggy connections)
+    reporter=text
     TEST='buildbot.test buildslave.test'
 else
+    # show all test names in a copy/pasteable fashion
+    reporter=bwverbose
     TEST="${@}"
 fi
 
@@ -40,4 +44,4 @@ TMPDIR=/tmp/trialtemp
 rm -rf "${TMPDIR}"
 
 echo "starting.."
-trial $debug --reporter bwverbose --temp-directory "${TMPDIR}" ${TEST}
+trial $debug --reporter $reporter --temp-directory "${TMPDIR}" ${TEST}
