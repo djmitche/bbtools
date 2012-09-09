@@ -3,7 +3,14 @@
 require base color
 have_task || die "No task loaded"
 
-OLDREV="github/master"
+branch_name="$(git symbolic-ref HEAD 2>/dev/null)" || die "not on a branch"
+branch_name="${branch_name##refs/heads/}"
+echo "validating branch: $branch_name"
+
+# figure out what the old revision is
+OLDREV="org/$branch_name"
+echo "fetching from github.."
+git fetch org || exit 1
 
 find "$DEV_TASK_DIR/master/buildbot" "$DEV_TASK_DIR/slave/buildslave" -name '*.pyc' -exec rm \{} \;
 
