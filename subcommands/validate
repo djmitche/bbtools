@@ -19,8 +19,11 @@ if test -z "$VIRTUAL_ENV"; then
     source "$DEV_TASK_DIR/sandbox/bin/activate"
 fi
 
+TMPDIR=/tmp/trialtemp
+[ -d /A ] && TMPDIR=/A/trialtemp
+
 cd "${DEV_TASK_DIR}" || exit 1
-if ./common/validate.sh $OLDREV; then
+if TRIALTMP=${TMPDIR} ./common/validate.sh $OLDREV; then
     git push org || exit 1
     git push || exit 1
 fi
