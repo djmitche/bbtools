@@ -5,5 +5,5 @@ have_task || die "No task loaded"
 
 test -z "$1" && die "usage: dev sandbox sandNN"
 
-rm "$DEV_TASK_DIR/sandbox"
+rm -f "$DEV_TASK_DIR/sandbox"
 ln -s "$1" "$DEV_TASK_DIR/sandbox"
