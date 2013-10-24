@@ -1,0 +1,4 @@
+load_task() {
+    # load buildbot
+    load git git://github.com/djmitche/bbadmin.git
+}
