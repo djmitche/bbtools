@@ -17,7 +17,7 @@ echo "Activating sandbox"
 source "$DEV_TASK_DIR/sandbox/bin/activate"
 
 PIDFILE="$VIRTUAL_ENV/master/twistd.pid"
-BASEDIR="$VIRTUAL_ENV/master"
+BASEDIR="/A/bbrun"
 
 if [ -f "$PIDFILE" ]; then
     buildbot stop "$BASEDIR" || exit 1

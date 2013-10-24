@@ -193,3 +193,5 @@ c['projectURL'] = "http://buildbot.sourceforge.net/"
 # without some help.
 
 c['buildbotURL'] = "http://localhost:8010/"
+
+c['mq'] = { 'debug': True }
